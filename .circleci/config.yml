@@ -230,7 +230,7 @@ jobs:
   deploy-ssh-production:
     executor: simple-executor
     steps:
-      - run: echo "TODO: déploiement production"
+      - run: echo "déploiement production"
 
 
 workflows:
