@@ -90,6 +90,9 @@ RUN rm -Rf /var/www/html/docker
 RUN mkdir -p /var/www/html/vendor \
     && mkdir -p /var/www/html/database
 
+# Install PHP dependencies
+RUN composer install --no-interaction --no-ansi --prefer-dist --no-progress
+
 #Change permission to allow app to work properly
 RUN chown -R www-data:www-data /var/www/html
 
