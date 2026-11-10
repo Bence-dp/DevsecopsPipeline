@@ -171,10 +171,7 @@ jobs:
     executor: builder-executor
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.23
-          # Retirez cette ligne si votre plan CircleCI ne supporte pas le DLC
-          docker_layer_caching: true
+      - setup_remote_docker
       - run:
           name: Build and Push Docker Image to GHCR (GitHub Container Registry)
           command: |
