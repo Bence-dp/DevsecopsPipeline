@@ -167,13 +167,13 @@ jobs:
           name: Run PHPUnit
           command: ./vendor/bin/phpunit --testsuite=Unit
 
-
   build-docker-image:
     executor: builder-executor
     steps:
       - checkout
       - setup_remote_docker:
           version: 20.10.23
+          # Retirez cette ligne si votre plan CircleCI ne supporte pas le DLC
           docker_layer_caching: true
       - run:
           name: Build and Push Docker Image to GHCR (GitHub Container Registry)
@@ -191,22 +191,22 @@ jobs:
             # Login to GHCR
             echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
-            # Build the Docker image
+            # Build the Docker image (tag de branche + tag immuable basé sur le SHA du commit)
             docker build \
-            -f docker/Dockerfile \
+            -f Docker/Dockerfile \
             -t $REPOSITORY:$TAG \
+            -t $REPOSITORY:$CIRCLE_SHA1 \
             --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --build-arg TAG="${TAG}" \
             --build-arg GIT_COMMIT=$(git rev-parse -q --verify HEAD) \
-            --build-arg GIT_URL=$(echo ${CIRCLE_REPOSITORY_URL} | sed -e 's/^git@/https:\/\//g' -e 's/\.git$//g' -e 's/:/\//g') \
+            --build-arg GIT_URL=$(echo ${CIRCLE_REPOSITORY_URL} | sed -e 's/^git@//' -e 's/\.git$//' -e 's/:/\//' -e 's/^/https:\/\//') \
             --build-arg SQLITE_VERSION=3430200 \
             --build-arg SQLITE_YEAR=2023 \
             --build-arg PROJECT_USERNAME=$CIRCLE_PROJECT_USERNAME \
             .
 
-            # Push the Docker image
-            docker push $REPOSITORY:$TAG
-
+            # Push the Docker image (tous les tags)
+            docker push --all-tags $REPOSITORY
 
   deploy-ssh-staging:
     executor: simple-executor
