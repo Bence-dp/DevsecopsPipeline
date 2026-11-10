@@ -227,8 +227,10 @@ jobs:
             EOF
 
 
-#  deploy-ssh-production:
-# It's up to you :)
+  deploy-ssh-production:
+    executor: simple-executor
+    steps:
+      - run: echo "TODO: déploiement production"
 
 
 workflows:
