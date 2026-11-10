@@ -63,11 +63,12 @@ RUN pecl install xdebug-${XDEBUG_VERSION} \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql zip pdo_sqlite
 
-# Install Infisical cli
+# Install Infisical CLI
 RUN apt-get install -y bash curl \
-    && curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
+    && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | bash \
     && apt-get update \
-    && apt-get install -y infisical
+    && apt-get install -y infisical \
+    && infisical --version
 
 RUN apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archives/*
