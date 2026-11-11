@@ -200,6 +200,45 @@ jobs:
           path: phploc.json
           destination: phploc.json
 
+  lint-phpmd:
+    executor: php-executor
+    steps:
+      - *attach_workspace
+      - run:
+          name: Download PHPMD
+          command: |
+            curl -L -o phpmd.phar https://github.com/phpmd/phpmd/releases/download/2.15.0/phpmd.phar
+      - run:
+          name: Run PHPMD
+          command: |
+            RULES="cleancode,codesize,controversial,design,naming,unusedcode"
+            php phpmd.phar src,public html $RULES --reportfile phpmd-report.html --ignore-violations-on-exit
+            php phpmd.phar src,public text $RULES --ignore-violations-on-exit | tee phpmd-report.txt
+      - store_artifacts:
+          path: phpmd-report.html
+          destination: phpmd-report.html
+      - store_artifacts:
+          path: phpmd-report.txt
+          destination: phpmd-report.txt
+
+  lint-php-doc-check:
+    executor: php-executor
+    steps:
+      - *attach_workspace
+      - run:
+          name: Install php-doc-check (isolated from the project)
+          command: |
+            mkdir -p /tmp/tools
+            composer require --working-dir=/tmp/tools niels-de-blaauw/php-doc-check --no-interaction
+      - run:
+          name: Run php-doc-check
+          command: |
+            /tmp/tools/vendor/bin/php-doc-check src public > php-doc-check.txt 2>&1 || true
+            cat php-doc-check.txt
+      - store_artifacts:
+          path: php-doc-check.txt
+          destination: php-doc-check.txt
+
   build-docker-image:
     executor: builder-executor
     steps:
@@ -281,6 +320,12 @@ workflows:
           requires:
             - build-setup
       - metrics-phploc:
+          requires:
+            - build-setup
+      - lint-phpmd:
+          requires:
+            - build-setup
+      - lint-php-doc-check:
           requires:
             - build-setup
       - hold:
