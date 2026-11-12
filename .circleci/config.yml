@@ -338,9 +338,25 @@ workflows:
       - lint-php-doc-check:
           requires:
             - build-setup
-      - build-docker-image:
+      - hold:
+          type: approval
+          filters:
+            branches:
+              only:
+                - main
+                - master
+                - /^release\/.*/
+      - deploy-ssh-staging:
           requires:
-            - build-setup
+            - hold
+          filters:
+            branches:
+              only:
+                - /^release\/.*/
+
+  container_workflow:
+    jobs:
+      - build-docker-image:
           filters:
             branches:
               only:
@@ -351,27 +367,11 @@ workflows:
                 - /^release\/.*/
                 - /^hotfix\/.*/
                 - /^bugfix\/.*/
-      - hold:
-          type: approval
-          filters:
-            branches:
-              only:
-                - main
-                - master
-                - /^release\/.*/
       - deploy-ssh-production:
           requires:
-            - hold
             - build-docker-image
           filters:
             branches:
               only:
                 - main
                 - master
-      - deploy-ssh-staging:
-          requires:
-            - hold
-          filters:
-            branches:
-              only:
-                - /^release\/.*/
