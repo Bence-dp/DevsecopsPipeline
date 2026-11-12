@@ -299,7 +299,17 @@ jobs:
   deploy-ssh-production:
     executor: simple-executor
     steps:
-      - run: echo "déploiement production"
+      - run:
+          name: Deploy to Render
+          command: |
+            if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+              echo "RENDER_DEPLOY_HOOK_URL is not configured"
+              exit 1
+            fi
+
+            curl --fail --silent --show-error \
+              --request POST \
+              "$RENDER_DEPLOY_HOOK_URL"
 
 
 workflows:
@@ -328,6 +338,19 @@ workflows:
       - lint-php-doc-check:
           requires:
             - build-setup
+      - build-docker-image:
+          requires:
+            - build-setup
+          filters:
+            branches:
+              only:
+                - master
+                - main
+                - develop
+                - /^feature\/.*/
+                - /^release\/.*/
+                - /^hotfix\/.*/
+                - /^bugfix\/.*/
       - hold:
           type: approval
           filters:
@@ -338,7 +361,8 @@ workflows:
                 - /^release\/.*/
       - deploy-ssh-production:
           requires:
-              - hold
+            - hold
+            - build-docker-image
           filters:
             branches:
               only:
@@ -351,18 +375,3 @@ workflows:
             branches:
               only:
                 - /^release\/.*/
-
-
-  container_workflow:
-    jobs:
-      - build-docker-image:
-          filters:
-            branches:
-              only:
-                - master
-                - main
-                - develop
-                - /^feature\/.*/
-                - /^release\/.*/
-                - /^hotfix\/.*/
-                - /^bugfix\/.*/
