@@ -285,7 +285,7 @@ jobs:
           name: Deploy to AWS staging
           command: |
             ssh -o StrictHostKeyChecking=accept-new "$STAGING_SSH_USER@$STAGING_SSH_HOST" \
-              "DEPLOY_DIR='$STAGING_DEPLOY_DIRECTORY' BRANCH='$CIRCLE_BRANCH' bash -s" << 'EOF'
+              "DEPLOY_DIR='$STAGING_DEPLOY_DIRECTORY' BRANCH='$CIRCLE_BRANCH' bash -s" \<< 'EOF'
             set -e
             PHP_FPM_VERSION=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
             cd "$DEPLOY_DIR"
