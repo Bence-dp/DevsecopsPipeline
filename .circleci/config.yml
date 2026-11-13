@@ -282,7 +282,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "${STAGING_SSH_FINGERPRINT}"
+            - "SHA256:OH0eEFGU8bP7fbMASTO+Ni3QhvfUAFrZJlb40J2vhdo"
       - deploy:
           name: Deploy to AWS
           command: |
