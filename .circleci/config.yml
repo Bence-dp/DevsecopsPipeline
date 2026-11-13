@@ -239,6 +239,24 @@ jobs:
           path: php-doc-check.txt
           destination: php-doc-check.txt
 
+
+  phpstan:
+    executor: php-executor
+    steps:
+      - checkout
+      - *attach_workspace
+      - run:
+          name: Install phpstan
+          command: composer require --dev phpstan/phpstan:^2.0.1
+      - run:
+          name: Run phpstan
+          command: ./vendor/bin/phpstan analyse src tests --error-format=junit > phpstan-report.xml
+      - store_test_results:
+          path: phpstan-report.xml
+
+
+  
+
   build-docker-image:
     executor: builder-executor
     steps:
@@ -275,6 +293,38 @@ jobs:
 
             # Push the Docker image (tous les tags)
             docker push --all-tags $REPOSITORY
+
+  security-trivy-scan:
+    executor: builder-executor
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Install Trivy
+          command: |
+            curl --fail --silent --show-error --location \
+              https://github.com/aquasecurity/trivy/releases/download/v0.57.0/trivy_0.57.0_Linux-64bit.deb \
+              --output /tmp/trivy.deb
+            sudo dpkg -i /tmp/trivy.deb
+            rm -f /tmp/trivy.deb
+      - run:
+          name: Scan Docker image with Trivy
+          command: |
+            set -o pipefail
+            REPOSITORY="ghcr.io/bence-dp/devsecopspipeline"
+            IMAGE="$REPOSITORY:$CIRCLE_SHA1"
+
+            echo "$GHCR_PAT" | docker login ghcr.io \
+              --username "$GHCR_USERNAME" \
+              --password-stdin
+            docker pull "$IMAGE"
+            trivy image \
+              --exit-code 1 \
+              --severity HIGH,CRITICAL \
+              --format table \
+              "$IMAGE" | tee trivy-report.txt
+      - store_artifacts:
+          path: trivy-report.txt
+          destination: trivy-report
 
   deploy-ssh-staging:
     executor: simple-executor
@@ -402,7 +452,9 @@ workflows:
             branches:
               only:
                 - /^release\/.*/
-
+      - phpstan:
+          requires:
+            - build-setup
   container_workflow:
     jobs:
       - build-docker-image:
@@ -416,9 +468,23 @@ workflows:
                 - /^release\/.*/
                 - /^hotfix\/.*/
                 - /^bugfix\/.*/
+      - security-trivy-scan:
+          requires:
+            - build-docker-image
+          filters:
+            branches:
+              only:
+                - master
+                - main
+                - develop
+                - /^feature\/.*/
+                - /^release\/.*/
+                - /^hotfix\/.*/
+                - /^bugfix\/.*/
       - deploy-ssh-production:
           requires:
             - build-docker-image
+            - security-trivy-scan
           filters:
             branches:
               only:
