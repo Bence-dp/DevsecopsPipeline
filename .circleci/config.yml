@@ -258,8 +258,8 @@ jobs:
           command: |
             # Login to GHCR
             echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-            docker pull ghcr.io/yvannponce/php-devsecops/phpapp:${CIRCLE_SHA1} || true
-            trivy image --exit-code 1 --severity HIGH,CRITICAL ghcr.io/yvannponce/php-devsecops/phpapp:${CIRCLE_SHA1} > trivy-report.txt || true
+            docker pull ghcr.io/bence-dp/DevsecopsPipeline/phpapp:${CIRCLE_SHA1} || true
+            trivy image --exit-code 1 --severity HIGH,CRITICAL ghcr.io/bence-dp/DevsecopsPipeline/phpapp:${CIRCLE_SHA1} > trivy-report.txt || true
       - store_artifacts:
           path: trivy-report.txt
           destination: trivy-report
@@ -298,10 +298,10 @@ jobs:
             echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
             # Build the Docker image
-            docker build -t ghcr.io/yvannponce/php-devsecops/phpapp:${CIRCLE_SHA1} --build-arg TAG="${CIRCLE_SHA1}" .
+            docker build -t ghcr.io/bence-dp/DevsecopsPipeline/phpapp:${CIRCLE_SHA1} --build-arg TAG="${CIRCLE_SHA1}" .
 
             # Push the Docker image
-            docker push ghcr.io/yvannponce/php-devsecops/phpapp:${CIRCLE_SHA1}
+            docker push ghcr.io/bence-dp/DevsecopsPipeline/phpapp:${CIRCLE_SHA1}
 
 
   deploy-ssh-staging:
