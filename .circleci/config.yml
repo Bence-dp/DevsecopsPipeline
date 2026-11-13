@@ -253,8 +253,7 @@ jobs:
               exit 0
             fi
 
-            # Sanitize the repository name and branch name
-            REPOSITORY=$(echo "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" | tr '[:upper:]' '[:lower:]' | tr -d '_')
+            REPOSITORY="ghcr.io/bence-dp/devsecopspipeline"
             TAG=$(echo $CIRCLE_BRANCH | tr '[:upper:]' '[:lower:]' | tr '/' '-' | tr -cd '[:alnum:]._-' | cut -c 1-128)
 
             # Login to GHCR
@@ -283,17 +282,28 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - "SHA256:OH0eEFGU8bP7fbMASTO+Ni3QhvfUAFrZJlb40J2vhdo"
-      - deploy:
-          name: Deploy to AWS
+      - run:
+          name: Deploy Docker image to AWS EC2 staging
           command: |
-            set -x
-            ssh -o StrictHostKeyChecking=no $STAGING_SSH_USER@$STAGING_SSH_HOST \<< EOF
-            PHP_FPM_VERSION=$(php -v | head -n 1 | cut -d ' ' -f 2 | cut -d '.' -f 1-2)
-            cd $STAGING_DEPLOY_DIRECTORY
-            git pull origin $CIRCLE_BRANCH
-            composer install --optimize-autoloader --no-interaction --prefer-dist
-            (flock -w 10 9 || exit 1; sudo -S service php${PHP_FPM_VERSION}-fpm restart ) 9>/tmp/fpm.lock
-            EOF
+            if [ -z "$STAGING_SSH_USER" ] ||
+               [ -z "$STAGING_SSH_HOST" ] ||
+               [ -z "$GHCR_USERNAME" ] ||
+               [ -z "$GHCR_PAT" ]; then
+              echo "Staging or GHCR variables are not configured"
+              exit 1
+            fi
+
+            REPOSITORY="ghcr.io/bence-dp/devsecopspipeline"
+            IMAGE="$REPOSITORY:$CIRCLE_SHA1"
+
+            printf '%s' "$GHCR_PAT" | ssh -o StrictHostKeyChecking=no \
+              "$STAGING_SSH_USER@$STAGING_SSH_HOST" \
+              "set -e
+               sudo docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
+               sudo docker pull '$IMAGE'
+               sudo docker rm -f devsecops-staging 2>/dev/null || true
+               sudo systemctl stop apache2 2>/dev/null || true
+               sudo docker run -d --name devsecops-staging --restart unless-stopped -p 80:80 '$IMAGE'"
 
 
   deploy-ssh-production:
@@ -304,23 +314,30 @@ jobs:
           command: |
             if [ -z "$EC2_PRIVATE_KEY" ] ||
                [ -z "$EC2_USER" ] ||
-               [ -z "$EC2_HOST" ]; then
-              echo "EC2 SSH variables are not configured"
+               [ -z "$EC2_HOST" ] ||
+               [ -z "$GHCR_USERNAME" ] ||
+               [ -z "$GHCR_PAT" ]; then
+              echo "EC2 or GHCR variables are not configured"
               exit 1
             fi
+
+            REPOSITORY="ghcr.io/bence-dp/devsecopspipeline"
+            IMAGE="$REPOSITORY:$CIRCLE_SHA1"
 
             mkdir -p ~/.ssh
             printf '%s\n' "$EC2_PRIVATE_KEY" > ~/.ssh/ec2_deploy_key
             chmod 600 ~/.ssh/ec2_deploy_key
             trap 'rm -f ~/.ssh/ec2_deploy_key' EXIT
 
-            ssh -o StrictHostKeyChecking=no \
+            printf '%s' "$GHCR_PAT" | ssh -o StrictHostKeyChecking=no \
               -i ~/.ssh/ec2_deploy_key \
               "$EC2_USER@$EC2_HOST" \
-              "cd '/var/www/app' &&
-               git pull origin '$CIRCLE_BRANCH' &&
-               composer install --optimize-autoloader --no-interaction --prefer-dist &&
-               sudo service php8.2-fpm restart"
+              "set -e
+               sudo docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
+               sudo docker pull '$IMAGE'
+               sudo docker rm -f devsecops-app 2>/dev/null || true
+               sudo systemctl stop apache2 2>/dev/null || true
+               sudo docker run -d --name devsecops-app --restart unless-stopped -p 80:80 '$IMAGE'"
 
 
 workflows:
