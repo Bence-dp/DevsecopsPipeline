@@ -288,7 +288,9 @@ jobs:
             if [ -z "$STAGING_SSH_USER" ] ||
                [ -z "$STAGING_SSH_HOST" ] ||
                [ -z "$GHCR_USERNAME" ] ||
-               [ -z "$GHCR_PAT" ]; then
+               [ -z "$GHCR_PAT" ] ||
+               [ -z "$INFISICAL_TOKEN" ] ||
+               [ -z "$INFISICAL_PROJECT_ID" ]; then
               echo "Staging or GHCR variables are not configured"
               exit 1
             fi
@@ -303,7 +305,11 @@ jobs:
                sudo docker pull '$IMAGE'
                sudo docker rm -f devsecops-staging 2>/dev/null || true
                sudo systemctl stop apache2 2>/dev/null || true
-               sudo docker run -d --name devsecops-staging --restart unless-stopped -p 80:80 '$IMAGE'"
+               sudo docker run -d --name devsecops-staging --restart unless-stopped \
+                 -p 80:80 \
+                 -e INFISICAL_TOKEN='$INFISICAL_TOKEN' \
+                 -e INFISICAL_PROJECT_ID='$INFISICAL_PROJECT_ID' \
+                 '$IMAGE'"
 
 
   deploy-ssh-production:
@@ -317,7 +323,8 @@ jobs:
                [ -z "$EC2_HOST" ] ||
                [ -z "$GHCR_USERNAME" ] ||
                [ -z "$GHCR_PAT" ] ||
-               [ -z "$INFISICAL_TOKEN" ]; then
+               [ -z "$INFISICAL_TOKEN" ] ||
+               [ -z "$INFISICAL_PROJECT_ID" ]; then
               echo "EC2 or GHCR variables are not configured"
               exit 1
             fi
@@ -343,6 +350,7 @@ jobs:
                   --restart unless-stopped \
                   -p 80:80 \
                   -e INFISICAL_TOKEN='$INFISICAL_TOKEN' \
+                  -e INFISICAL_PROJECT_ID='$INFISICAL_PROJECT_ID' \
                   '$IMAGE'"
 
 workflows:
