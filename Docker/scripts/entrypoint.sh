@@ -15,6 +15,7 @@ trap cleanup EXIT
 : "${INFISICAL_PROJECT_ID:?INFISICAL_PROJECT_ID must be set}"
 : "${INFISICAL_ENVIRONMENT:?INFISICAL_ENVIRONMENT must be set}"
 
+
 infisical_args=(
     export
     "--token=${INFISICAL_TOKEN}"
