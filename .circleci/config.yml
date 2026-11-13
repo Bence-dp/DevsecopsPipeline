@@ -299,11 +299,11 @@ jobs:
   deploy-ssh-production:
     executor: simple-executor
     steps:
+      - checkout
       - add_ssh_keys:
           fingerprints:
             - "${PRODUCTION_SSH_FINGERPRINT}"
-
-      - run:
+      - deploy:
           name: Deploy to AWS EC2 production
           command: |
             if [ -z "$PRODUCTION_SSH_USER" ] ||
@@ -314,6 +314,7 @@ jobs:
             fi
 
             ssh -o StrictHostKeyChecking=no \
+              -p "${PRODUCTION_SSH_PORT:-22}" \
               "$PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST" \
               "cd '$PRODUCTION_DEPLOY_DIRECTORY' &&
                git pull origin '$CIRCLE_BRANCH' &&
