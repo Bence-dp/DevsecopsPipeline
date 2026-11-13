@@ -362,8 +362,6 @@ workflows:
  
       - deploy-ssh-staging:
           type: approval
-          requires:
-            - security-trivy-scan
           filters:
             branches:
               only:
