@@ -291,7 +291,8 @@ jobs:
                [ -z "$GHCR_PAT" ] ||
                [ -z "$INFISICAL_TOKEN" ] ||
                [ -z "$INFISICAL_PROJECT_ID" ] ||
-               [ -z "$INFISICAL_ENVIRONMENT" ]; then
+               [ -z "$INFISICAL_ENVIRONMENT" ] ||
+               [ -z "$INFISICAL_DOMAIN" ]; then
               echo "Staging or GHCR variables are not configured"
               exit 1
             fi
@@ -311,6 +312,7 @@ jobs:
                  -e INFISICAL_TOKEN='$INFISICAL_TOKEN' \
                  -e INFISICAL_PROJECT_ID='$INFISICAL_PROJECT_ID' \
                  -e INFISICAL_ENVIRONMENT='$INFISICAL_ENVIRONMENT' \
+                 -e INFISICAL_DOMAIN='$INFISICAL_DOMAIN' \
                  '$IMAGE'"
 
 
@@ -327,7 +329,8 @@ jobs:
                [ -z "$GHCR_PAT" ] ||
                [ -z "$INFISICAL_TOKEN" ] ||
                [ -z "$INFISICAL_PROJECT_ID" ] ||
-               [ -z "$INFISICAL_ENVIRONMENT" ]; then
+               [ -z "$INFISICAL_ENVIRONMENT" ] ||
+               [ -z "$INFISICAL_DOMAIN" ]; then
               echo "EC2 or GHCR variables are not configured"
               exit 1
             fi
@@ -355,6 +358,7 @@ jobs:
                   -e INFISICAL_TOKEN='$INFISICAL_TOKEN' \
                   -e INFISICAL_PROJECT_ID='$INFISICAL_PROJECT_ID' \
                   -e INFISICAL_ENVIRONMENT='$INFISICAL_ENVIRONMENT' \
+                  -e INFISICAL_DOMAIN='$INFISICAL_DOMAIN' \
                   '$IMAGE'"
 
 workflows:
