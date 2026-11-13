@@ -12,3 +12,5 @@ devsecops-prod.pem
 devsecops-key.pem
 *.pem
 *.pem*
+
+GitHub-action-ec2-key.pem
