@@ -86,6 +86,9 @@ COPY . /var/www/html
 
 RUN rm -Rf /var/www/html/docker
 
+COPY Docker/scripts/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
 # Ensure the volumes directories exist
 RUN mkdir -p /var/www/html/vendor \
     && mkdir -p /var/www/html/database
@@ -98,6 +101,9 @@ RUN chown -R www-data:www-data /var/www/html
 
 # Define the working directory
 WORKDIR /var/www/html
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
 
 # Exposez le port 80
 EXPOSE 80
