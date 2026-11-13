@@ -37,4 +37,6 @@ fi
 install -o www-data -g www-data -m 0640 "${TEMP_ENV_FILE}" "${ENV_FILE}"
 echo "Application secrets written to ${ENV_FILE}."
 
+unset INFISICAL_TOKEN
+
 exec "$@"

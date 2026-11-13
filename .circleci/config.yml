@@ -299,26 +299,27 @@ jobs:
   deploy-ssh-production:
     executor: simple-executor
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "${PRODUCTION_SSH_FINGERPRINT}"
+      - add_ssh_keys
 
       - run:
-          name: Deploy to AWS EC2 production
+          name: Deploy container to AWS EC2 production
           command: |
-            if [ -z "$PRODUCTION_SSH_USER" ] ||
-               [ -z "$PRODUCTION_SSH_HOST" ] ||
-               [ -z "$PRODUCTION_DEPLOY_DIRECTORY" ]; then
+            if [ -z "$PRODUCTION_SSH_USER" ] || [ -z "$PRODUCTION_SSH_HOST" ]; then
               echo "Production SSH variables are not configured"
               exit 1
             fi
 
-            ssh -o StrictHostKeyChecking=no \
+            # Same image name as the one pushed by build-docker-image
+            REPOSITORY=$(echo "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" | tr '[:upper:]' '[:lower:]' | tr -d '_')
+            IMAGE="$REPOSITORY:$CIRCLE_SHA1"
+
+            ssh -o StrictHostKeyChecking=accept-new \
               "$PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST" \
-              "cd '$PRODUCTION_DEPLOY_DIRECTORY' &&
-               git pull origin '$CIRCLE_BRANCH' &&
-               composer install --optimize-autoloader --no-interaction --prefer-dist &&
-               sudo service php8.2-fpm restart"
+              "docker pull $IMAGE &&
+               (docker rm -f app || true) &&
+               docker run -d --name app --restart unless-stopped -p 80:80 \
+                 --env-file ~/infisical.env \
+                 $IMAGE"
 
 
 workflows:
