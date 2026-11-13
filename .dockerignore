@@ -29,3 +29,5 @@ Docker
 .phpunit.result.cache
 .vagrant
 vendor
+
+devsecops-prod.pem

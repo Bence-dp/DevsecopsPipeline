@@ -299,17 +299,26 @@ jobs:
   deploy-ssh-production:
     executor: simple-executor
     steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "${PRODUCTION_SSH_FINGERPRINT}"
+
       - run:
-          name: Deploy to Render
+          name: Deploy to AWS EC2 production
           command: |
-            if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-              echo "RENDER_DEPLOY_HOOK_URL is not configured"
+            if [ -z "$PRODUCTION_SSH_USER" ] ||
+               [ -z "$PRODUCTION_SSH_HOST" ] ||
+               [ -z "$PRODUCTION_DEPLOY_DIRECTORY" ]; then
+              echo "Production SSH variables are not configured"
               exit 1
             fi
 
-            curl --fail --silent --show-error \
-              --request POST \
-              "$RENDER_DEPLOY_HOOK_URL"
+            ssh -o StrictHostKeyChecking=no \
+              "$PRODUCTION_SSH_USER@$PRODUCTION_SSH_HOST" \
+              "cd '$PRODUCTION_DEPLOY_DIRECTORY' &&
+               git pull origin '$CIRCLE_BRANCH' &&
+               composer install --optimize-autoloader --no-interaction --prefer-dist &&
+               sudo service php8.2-fpm restart"
 
 
 workflows:
