@@ -337,8 +337,12 @@ jobs:
                sudo docker pull '$IMAGE'
                sudo docker rm -f devsecops-app 2>/dev/null || true
                sudo systemctl stop apache2 2>/dev/null || true
-               sudo docker run -d --name devsecops-app --restart unless-stopped -p 80:80 '$IMAGE'"
-
+                sudo docker run -d \
+                --name devsecops-app \
+                --restart unless-stopped \
+                -p 80:80 \
+                -e INFISICAL_TOKEN \
+                '$IMAGE'
 
 workflows:
   main_workflow:
