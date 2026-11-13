@@ -11,4 +11,4 @@ composer.phar
 devsecops-prod.pem
 devsecops-key.pem
 *.pem
-*.pem
+*.pem*
