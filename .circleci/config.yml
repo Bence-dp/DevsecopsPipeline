@@ -279,7 +279,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "SHA256:sq7l+sXd0ohlNURliSffjprzIWDywK2Axdenl4VwJKo"
+            - "SHA256:N8gj/1DTw8C0j9kt7jlakXz81gDkwcgM0yGCETzfCps"
 
       - run:
           name: Deploy to AWS staging
