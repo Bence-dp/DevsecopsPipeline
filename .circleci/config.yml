@@ -53,20 +53,17 @@ executors:
     resource_class: small
     shell: /bin/bash
     docker:
-      - name: localhost
-        image: cimg/php:8.2
+      - image: cimg/php:8.2
   builder-executor:
     resource_class: small
     shell: /bin/bash
     docker:
       - image: cimg/php:8.2-node
-        name: localhost
   simple-executor:
     resource_class: small
     shell: /bin/bash
     docker:
       - image: cimg/base:stable
-        name: localhost
 
 
 
@@ -282,17 +279,20 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "${STAGING_SSH_FINGERPRINT}"
-      - deploy:
-          name: Deploy to AWS
+            - "SHA256:sq7l+sXd0ohlNURliSffjprzIWDywK2Axdenl4VwJKo"
+
+      - run:
+          name: Deploy to AWS staging
           command: |
-            set -x
-            ssh -o StrictHostKeyChecking=no $STAGING_SSH_USER@$STAGING_SSH_HOST \<< EOF
-            PHP_FPM_VERSION=$(php -v | head -n 1 | cut -d ' ' -f 2 | cut -d '.' -f 1-2)
-            cd $STAGING_DEPLOY_DIRECTORY
-            git pull origin $CIRCLE_BRANCH
+            ssh -o StrictHostKeyChecking=accept-new "$STAGING_SSH_USER@$STAGING_SSH_HOST" \
+              "DEPLOY_DIR='$STAGING_DEPLOY_DIRECTORY' BRANCH='$CIRCLE_BRANCH' bash -s" << 'EOF'
+            set -e
+            PHP_FPM_VERSION=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+            cd "$DEPLOY_DIR"
+            git pull origin "$BRANCH"
             composer install --optimize-autoloader --no-interaction --prefer-dist
-            (flock -w 10 9 || exit 1; sudo -S service php${PHP_FPM_VERSION}-fpm restart ) 9>/tmp/fpm.lock
+            # Requires a NOPASSWD sudoers rule for this command on the server
+            sudo -n systemctl restart "php${PHP_FPM_VERSION}-fpm"
             EOF
 
 
